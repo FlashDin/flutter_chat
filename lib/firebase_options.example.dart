@@ -38,33 +38,33 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA72kO2v1pcPlr1jgjVNIZKVP4kr0xfuKQ',
-    appId: '1:277832416635:web:6afc3064c0f3669db711de',
-    messagingSenderId: '277832416635',
-    projectId: 'flutter-chat-cbbc0',
-    authDomain: 'flutter-chat-cbbc0.firebaseapp.com',
-    storageBucket: 'flutter-chat-cbbc0.appspot.com',
-    measurementId: 'G-JQ1KLH21CC',
-    databaseURL: 'https://flutter-chat-cbbc0-default-rtdb.asia-southeast1.firebasedatabase.app'
+    apiKey: 'your-apiKey',
+    appId: 'your-appId',
+    messagingSenderId: 'your-messagingSenderId',
+    projectId: 'your-projectId',
+    authDomain: 'your-authDomain',
+    storageBucket: 'your-storageBucket',
+    measurementId: 'your-measurementId',
+    databaseURL: 'your-databaseURL'
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBOq_8KemuwNngMfv17Yq7MxZDjrFc9_k0',
-    appId: '1:277832416635:android:391b3e77493985efb711de',
-    messagingSenderId: '277832416635',
-    projectId: 'flutter-chat-cbbc0',
-    storageBucket: 'flutter-chat-cbbc0.appspot.com',
-    databaseURL: 'https://flutter-chat-cbbc0-default-rtdb.asia-southeast1.firebasedatabase.app'
+    apiKey: 'your-apiKey',
+    appId: 'your-appId',
+    messagingSenderId: 'your-messagingSenderId',
+    projectId: 'your-projectId',
+    storageBucket: 'your-storageBucket',
+    databaseURL: 'your-databaseURL'
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCFiW5VAW2R_xTfb2X4LuTgj7G6XamXfS0',
-    appId: '1:277832416635:ios:4973560e41f58f6db711de',
-    messagingSenderId: '277832416635',
-    projectId: 'flutter-chat-cbbc0',
-    storageBucket: 'flutter-chat-cbbc0.appspot.com',
-    iosClientId: '277832416635-n4qajo20ov067g9rebumg60k9pvkohmi.apps.googleusercontent.com',
-    iosBundleId: 'com.example.app',
-    databaseURL: 'https://flutter-chat-cbbc0-default-rtdb.asia-southeast1.firebasedatabase.app'
+    apiKey: 'your-apiKey',
+    appId: 'your-appId',
+    messagingSenderId: 'your-messagingSenderId',
+    projectId: 'your-projectId',
+    storageBucket: 'your-storageBucket',
+    iosClientId: 'your-iosClientId',
+    iosBundleId: 'your-iosBundleId',
+    databaseURL: 'your-databaseURL'
   );
 }

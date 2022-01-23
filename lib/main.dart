@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat/chat.dart';
 import 'package:flutter_chat/chat_service.dart';
@@ -14,6 +15,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,79 +57,58 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: <Widget>[
-          FutureBuilder(
-            future: _chatService.findByUser(
-                me: _chat.me ?? "null",
-                you: _chat.you ?? "null",
-                page: 0,
-                size: 100,
-                sort: "id",
-                direction: "asc"),
-            builder:
-                (BuildContext context, AsyncSnapshot<List<Chat>> snapshot) {
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                      "Something wrong with message: ${snapshot.error.toString()}"),
-                );
-              } else if (snapshot.connectionState == ConnectionState.done) {
-                List<Chat> chats = snapshot.data as List<Chat>;
-                return ListView.builder(
-                    itemCount: chats.length,
-                    shrinkWrap: true,
-                    padding: EdgeInsets.only(top: 60, bottom: 10),
-                    physics: NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      return Container(
-                        padding: EdgeInsets.only(
-                            left: 14, right: 14, top: 10, bottom: 10),
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: (chats[index].me == "receiver"
-                                  ? Alignment.topLeft
-                                  : Alignment.topRight),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: (chats[index].me == "receiver"
-                                      ? Colors.grey.shade300
-                                      : Colors.blue[100]),
-                                ),
-                                padding: EdgeInsets.all(16),
-                                child: Text(
-                                  chats[index].message ?? "Empty message",
-                                  style: TextStyle(fontSize: 15),
-                                ),
-                              ),
+          FirebaseAnimatedList(
+              query: _chatService.findAll(),
+              itemBuilder: (context, snapshot, animation, index) {
+                Chat chat = chatFromJson(snapshot.value);
+                if ((chat.me == _chat.me && chat.you == _chat.you) ||
+                    (chat.me == _chat.you && chat.you == _chat.me)) {
+                  return Container(
+                    padding: EdgeInsets.only(
+                        left: 14, right: 14, top: 10, bottom: 10),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: (chat.me == "receiver"
+                              ? Alignment.topLeft
+                              : Alignment.topRight),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: (chat.me == "receiver"
+                                  ? Colors.grey.shade300
+                                  : Colors.blue[100]),
                             ),
-                            Align(
-                              alignment: (chats[index].me == "receiver"
-                                  ? Alignment.bottomLeft
-                                  : Alignment.bottomRight),
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                    top: 50, right: 16, left: 16),
-                                child: Text(
-                                  chats[index].me == "receiver"
-                                      ? "receiver"
-                                      : "sender",
-                                  style: TextStyle(
-                                      fontSize: 10, color: Colors.grey),
-                                ),
-                              ),
-                            )
-                          ],
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              chat.message ?? "Empty message",
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          ),
                         ),
-                      );
-                    });
-              } else {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-            },
-          ),
+                        Align(
+                          alignment: (chat.me == "receiver"
+                              ? Alignment.bottomLeft
+                              : Alignment.bottomRight),
+                          child: Container(
+                            padding: EdgeInsets.only(
+                                top: 50, right: 16, left: 16),
+                            child: Text(
+                              chat.me == "receiver"
+                                  ? "receiver"
+                                  : "sender",
+                              style: TextStyle(
+                                  fontSize: 10, color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  );
+                } else {
+                  return Container();
+                }
+              }),
           Align(
             alignment: Alignment.topLeft,
             child: Container(
@@ -215,13 +196,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       _chatService.save(_chat).then((res) {
                         if (res != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message sended")
-                          ));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Message sended")));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message failed to send")
-                          ));
+                              content: Text("Message failed to send")));
                         }
                       });
                     },
