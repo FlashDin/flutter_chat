@@ -1,18 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter_chat/response_list.dart';
-
 class Chat {
-  int? id;
+  String? id;
   String? me;
   String? you;
   String? message;
 
-  Chat(
-      {this.id = 0,
-      this.me = "",
-      this.you = "",
-      this.message = ""});
+  Chat({this.id = "", this.me = "", this.you = "", this.message = ""});
 
   factory Chat.fromJson(dynamic map) {
     return Chat(
@@ -29,9 +23,8 @@ class Chat {
   }
 }
 
-List<Chat> chatFromJson(String jsonData) {
-  ResponseList data = ResponseList.fromJson(json.decode(jsonData));
-  return List<Chat>.from(data.content.map((item) => Chat.fromJson(item)));
+List<Chat> chatFromJson(List<dynamic> data) {
+  return List<Chat>.from(data.map((item) => Chat.fromJson(item)));
 }
 
 String chatToJsonString(Chat data) {

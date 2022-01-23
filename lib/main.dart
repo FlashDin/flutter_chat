@@ -14,6 +14,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,23 +56,26 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: <Widget>[
-          FutureBuilder(
-            future: _chatService.findByUser(
+          StreamBuilder<List<Chat>>(
+            stream: _chatService.findAll(
                 me: _chat.me ?? "null",
                 you: _chat.you ?? "null",
                 page: 0,
                 size: 100,
                 sort: "id",
                 direction: "asc"),
-            builder:
-                (BuildContext context, AsyncSnapshot<List<Chat>> snapshot) {
+            builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Center(
                   child: Text(
                       "Something wrong with message: ${snapshot.error.toString()}"),
                 );
-              } else if (snapshot.connectionState == ConnectionState.done) {
+              } else {
                 List<Chat> chats = snapshot.data as List<Chat>;
+                chats = chats.where((chat) {
+                  return (chat.me == _chat.me && chat.you == _chat.you) ||
+                      (chat.me == _chat.you && chat.you == _chat.me);
+                }).toList();
                 return ListView.builder(
                     itemCount: chats.length,
                     shrinkWrap: true,
@@ -121,10 +125,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       );
                     });
-              } else {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
               }
             },
           ),
@@ -215,13 +215,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       _chatService.save(_chat).then((res) {
                         if (res != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message sended")
-                          ));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Message sended")));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message failed to send")
-                          ));
+                              content: Text("Message failed to send")));
                         }
                       });
                     },

@@ -1,12 +1,26 @@
 import 'dart:convert';
 
 import 'package:flutter_chat/chat.dart';
-import 'package:http/http.dart' show Client;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatService {
-  String baseUrl = "http://192.168.56.1:8090/api/chat";
-  Client client = Client();
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+  Stream<List<Chat>> findAll(
+      {String me = "",
+        String you = "",
+        int page = 0,
+        int size = 100,
+        String sort = "id",
+        String direction = "asc"}) {
+    CollectionReference collectionReference = firestore.collection('chat');
+    final response = collectionReference
+        .orderBy(sort, descending: direction != 'asc')
+        .limit(size);
+    return response.snapshots().map((event) => chatFromJson(event.docs.map((e) => e.data()).toList()));
+  }
+  
   Future<List<Chat>> findByUser(
       {String me = "",
       String you = "",
@@ -14,52 +28,48 @@ class ChatService {
       int size = 100,
       String sort = "id",
       String direction = "asc"}) async {
-    String par = Uri(queryParameters: {
-      "me": me,
-      "you": you,
-      "page": page.toString(),
-      "size": size.toString(),
-      "sort": sort,
-      "direction": direction
-    }).query;
-    final response = await client.get(
-      Uri.parse("$baseUrl?$par"),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
-    return chatFromJson(response.body);
+    CollectionReference collectionReference = firestore.collection('chat');
+    final response = await collectionReference
+        .orderBy(sort, descending: direction != 'asc')
+        .limit(size)
+        .get();
+    List<dynamic> ls = response.docs.map((e) => e.data()).toList();
+    ls = ls.where((element) {
+      Map<String, dynamic> map = element;
+      return (map["me"] == me && map["you"] == you) ||
+          (map["me"] == you && map["you"] == me);
+    }).toList();
+    return chatFromJson(ls);
   }
 
   Future<dynamic> save(Chat model) async {
-    final response = await client.post(
-      Uri.parse("$baseUrl"),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: chatToJsonString(model),
-    );
-    return json.decode(response.body);
+    var uuid = Uuid();
+    CollectionReference collectionReference = firestore.collection('chat');
+    model.id = uuid.v4();
+    String response = await collectionReference
+        .add(chatToJson(model))
+        .then((value) => "Save data")
+        .catchError((error) => "Failed to save: $error");
+    return response;
   }
 
   Future<dynamic> update(Chat model) async {
-    final response = await client.put(
-      Uri.parse("$baseUrl"),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: chatToJsonString(model),
-    );
-    return json.decode(response.body);
+    CollectionReference collectionReference = firestore.collection('chat');
+    String response = await collectionReference
+        .doc(model.id)
+        .update(chatToJson(model))
+        .then((value) => "Update data")
+        .catchError((error) => "Failed to update: $error");
+    return response;
   }
 
-  Future<dynamic> delete(int id) async {
-    final response = await client.get(
-      Uri.parse("$baseUrl/$id"),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
-    return json.decode(response.body);
+  Future<dynamic> delete(String id) async {
+    CollectionReference collectionReference = firestore.collection('chat');
+    String response = await collectionReference
+        .doc(id)
+        .delete()
+        .then((value) => "Delete data")
+        .catchError((error) => "Failed to delete: $error");
+    return response;
   }
 }
