@@ -1,19 +1,17 @@
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_chat/chat.dart';
 import 'package:flutter_chat/chat_service.dart';
-import 'package:flutter_chat/firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Chat Example'),
+      home: MyHomePage(title: 'Flutter Chat Example'),
     );
   }
 }
@@ -35,13 +33,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  ChatService _chatService = new ChatService();
   Chat _chat = new Chat(me: "sender", you: "receiver");
   List<TextEditingController> _textEditingControllers = [];
+  ChatService _chatService = ChatService();
+  List<Chat> _chats = [];
 
   @override
   void initState() {
     super.initState();
+    _chatService = ChatService(updateState: (p0) => setList(p0));
+    _chatService.connect();
     _textEditingControllers.add(new TextEditingController(text: _chat.me));
     _textEditingControllers.add(new TextEditingController(text: _chat.you));
     _textEditingControllers.add(new TextEditingController(text: _chat.message));
@@ -55,79 +56,55 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: <Widget>[
-          FutureBuilder(
-            future: _chatService.findByUser(
-                me: _chat.me ?? "null",
-                you: _chat.you ?? "null",
-                page: 0,
-                size: 100,
-                sort: "createdDate",
-                direction: "asc"),
-            builder:
-                (BuildContext context, AsyncSnapshot<List<Chat>> snapshot) {
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                      "Something wrong with message: ${snapshot.error.toString()}"),
-                );
-              } else if (snapshot.connectionState == ConnectionState.done) {
-                List<Chat> chats = snapshot.data as List<Chat>;
-                return ListView.builder(
-                    itemCount: chats.length,
-                    shrinkWrap: true,
-                    padding: EdgeInsets.only(top: 60, bottom: 10),
-                    physics: NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      return Container(
-                        padding: EdgeInsets.only(
-                            left: 14, right: 14, top: 10, bottom: 10),
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: (chats[index].me == "receiver"
-                                  ? Alignment.topLeft
-                                  : Alignment.topRight),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: (chats[index].me == "receiver"
-                                      ? Colors.grey.shade300
-                                      : Colors.blue[100]),
-                                ),
-                                padding: EdgeInsets.all(16),
-                                child: Text(
-                                  chats[index].message ?? "Empty message",
-                                  style: TextStyle(fontSize: 15),
-                                ),
-                              ),
-                            ),
-                            Align(
-                              alignment: (chats[index].me == "receiver"
-                                  ? Alignment.bottomLeft
-                                  : Alignment.bottomRight),
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                    top: 50, right: 16, left: 16),
-                                child: Text(
-                                  chats[index].me == "receiver"
-                                      ? "receiver"
-                                      : "sender",
-                                  style: TextStyle(
-                                      fontSize: 10, color: Colors.grey),
-                                ),
-                              ),
-                            )
-                          ],
+          ListView.builder(
+              itemCount: _chats.length,
+              shrinkWrap: true,
+              padding: EdgeInsets.only(top: 60, bottom: 10),
+              physics: NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                return Container(
+                  padding: EdgeInsets.only(
+                      left: 14, right: 14, top: 10, bottom: 10),
+                  child: Stack(
+                    children: [
+                      Align(
+                        alignment: (_chats[index].me == "receiver"
+                            ? Alignment.topLeft
+                            : Alignment.topRight),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: (_chats[index].me == "receiver"
+                                ? Colors.grey.shade300
+                                : Colors.blue[100]),
+                          ),
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                            _chats[index].message ?? "Empty message",
+                            style: TextStyle(fontSize: 15),
+                          ),
                         ),
-                      );
-                    });
-              } else {
-                return Center(
-                  child: CircularProgressIndicator(),
+                      ),
+                      Align(
+                        alignment: (_chats[index].me == "receiver"
+                            ? Alignment.bottomLeft
+                            : Alignment.bottomRight),
+                        child: Container(
+                          padding: EdgeInsets.only(
+                              top: 50, right: 16, left: 16),
+                          child: Text(
+                            _chats[index].me == "receiver"
+                                ? "receiver"
+                                : "sender",
+                            style: TextStyle(
+                                fontSize: 10, color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
                 );
-              }
-            },
-          ),
+              }),
           Align(
             alignment: Alignment.topLeft,
             child: Container(
@@ -213,17 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   FloatingActionButton(
                     onPressed: () {
-                      _chatService.save(_chat).then((res) {
-                        if (res != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message sended")
-                          ));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Message failed to send")
-                          ));
-                        }
-                      });
+                      _chatService.sendMessage(_chat);
                     },
                     child: Icon(
                       Icons.send,
@@ -240,5 +207,16 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _chatService.disconnect();
+  }
+
+  void setList(List<Chat> chats) {
+    setState(() {
+      _chats = chats;
+    });
   }
 }
