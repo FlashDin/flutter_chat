@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 you: _chat.you ?? "null",
                 page: 0,
                 size: 100,
-                sort: "id",
+                sort: "createdDate",
                 direction: "asc"),
             builder:
                 (BuildContext context, AsyncSnapshot<List<Chat>> snapshot) {

@@ -4,7 +4,7 @@ import 'package:flutter_chat/chat.dart';
 import 'package:http/http.dart' show Client;
 
 class ChatService {
-  String baseUrl = "http://192.168.56.1:8090/api/chat";
+  String baseUrl = "http://192.168.57.1:8090/api/chat";
   Client client = Client();
 
   Future<List<Chat>> findByUser(
